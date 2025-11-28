@@ -12,8 +12,14 @@ class NHTSAService:
         """
         Decode a VIN using NHTSA API.
         Returns vehicle information if valid, or error info if invalid.
+        
+        NHTSA Error Codes:
+        0 = No errors
+        1-6 = Warnings (checksum mismatch, incomplete data, etc.) but VIN structure is valid
+        7+ = Invalid VIN format
         """
-        url = f"{NHTSAService.BASE_URL}/DecodeVin/{vin}?format=json"
+        # Use DecodeVinValues for better validation
+        url = f"{NHTSAService.BASE_URL}/DecodeVinValues/{vin}?format=json"
         
         async with httpx.AsyncClient() as client:
             try:
@@ -23,47 +29,62 @@ class NHTSAService:
                 
                 results = data.get("Results", [])
                 
-                # Check for error codes in results
-                error_code = None
-                make = None
-                model = None
-                year = None
-                body_class = None
-                
-                for item in results:
-                    var = item.get("Variable", "")
-                    value = item.get("Value")
-                    
-                    if var == "Error Code":
-                        error_code = value
-                    elif var == "Make" and value:
-                        make = value
-                    elif var == "Model" and value:
-                        model = value
-                    elif var == "Model Year" and value:
-                        year = value
-                    elif var == "Body Class" and value:
-                        body_class = value
-                
-                # Error codes: 0 = no error, 1-4 = minor issues, 5+ = invalid
-                if error_code and error_code not in ["0", "1", "6"]:
-                    return {
-                        "valid": False,
-                        "error": f"Invalid VIN. Please check and try again."
-                    }
-                
-                if not make:
+                if not results:
                     return {
                         "valid": False,
                         "error": "Could not decode VIN. Please verify it's correct."
                     }
+                
+                # Extract data from results
+                result_data = results[0] if results else {}
+                
+                # Get error code and convert to int safely
+                error_code_raw = result_data.get("ErrorCode", "0")
+                try:
+                    error_code = int(str(error_code_raw).strip()) if error_code_raw else 0
+                except (ValueError, TypeError):
+                    error_code = 0
+                
+                # Extract vehicle information
+                make = result_data.get("Make")
+                model = result_data.get("Model")
+                year = result_data.get("ModelYear")
+                body_class = result_data.get("BodyClass")
+                
+                # Error codes 0-6 are acceptable (0 = perfect, 1-6 = warnings but valid)
+                # Error codes 7+ indicate invalid VIN structure
+                if error_code >= 7:
+                    error_text = result_data.get("ErrorText", "Invalid VIN format")
+                    return {
+                        "valid": False,
+                        "error": f"Invalid VIN: {error_text}"
+                    }
+                
+                # Must have at least a make to be considered valid
+                if not make or make.strip() == "":
+                    return {
+                        "valid": False,
+                        "error": "Could not decode VIN. Please verify it's correct."
+                    }
+                
+                # Additional validation: reject if make seems like a manufacturer code (contains +)
+                # or if it's obviously not a consumer vehicle
+                suspicious_makes = ["SHERMAN + REILLY", "INCOMPLETE", "NOT APPLICABLE"]
+                if make.upper() in suspicious_makes or "+" in make:
+                    # For non-consumer vehicles, require at least a year to accept
+                    if not year or year.strip() == "":
+                        return {
+                            "valid": False,
+                            "error": "This VIN doesn't appear to be for a standard consumer vehicle."
+                        }
                 
                 return {
                     "valid": True,
                     "make": make,
                     "model": model,
                     "year": year,
-                    "body_class": body_class
+                    "body_class": body_class,
+                    "error_code": error_code  # Include for debugging
                 }
                 
             except httpx.TimeoutException:
