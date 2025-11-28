@@ -94,14 +94,16 @@ export function useChat() {
     }
   }, [sessionId]);
 
-  const resetChat = useCallback(() => {
+  const resetChat = useCallback(async () => {
     setSessionId(null);
     setMessages([]);
     setCurrentState('');
     setIsComplete(false);
     setIsLoading(false);
     setError(null);
-  }, []);
+    // Automatically start a new conversation
+    await startConversation();
+  }, [startConversation]);
 
   return {
     sessionId,

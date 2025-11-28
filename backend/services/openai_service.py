@@ -18,32 +18,35 @@ class OpenAIService:
         
         base_prompt = """You are a friendly, professional insurance onboarding assistant. Your role is to collect information from users in a conversational way. Be concise but warm.
 
-IMPORTANT RULES:
-1. Stay focused on collecting the required information
-2. If the user seems frustrated, upset, or asks to speak with a human, respond with empathy and include the phrase [FRUSTRATED_USER] at the start of your response
-3. Validate inputs naturally (e.g., if email looks invalid, politely ask them to check it)
-4. Keep responses brief - one or two sentences when asking for information
-5. Don't repeat information the user has already provided
+CRITICAL RULES:
+1. You MUST ONLY ask the question specified in your current task - nothing else
+2. NEVER skip ahead to other questions or topics
+3. Always acknowledge what the user just provided, then IMMEDIATELY ask the EXACT question specified in your current task
+4. If the user seems frustrated, upset, or asks to speak with a human, respond with empathy and include the phrase [FRUSTRATED_USER] at the start of your response
+5. Validate inputs naturally (e.g., if email looks invalid, politely ask them to check it)
+6. Keep responses brief - one or two sentences when asking for information
+7. Don't repeat information the user has already provided
+8. NEVER say things like "That's all the information I need" or "We're all set" or "Do you have any other vehicles" unless the current task explicitly says to ask that
 """
         
         state_prompts = {
             "zip_code": "Ask for their ZIP code. Validate it's a 5-digit number.",
-            "full_name": "Ask for their full name.",
-            "email": "Ask for their email address.",
-            "vehicle_choice": "Ask if they want to provide a VIN number OR enter Year, Make, and Body Type manually.",
+            "full_name": "Briefly acknowledge their ZIP code, then ask for their full name.",
+            "email": "Briefly acknowledge their name, then ask for their email address.",
+            "vehicle_choice": "Briefly acknowledge their email, then ask if they want to provide a VIN number OR enter Year, Make, and Body Type manually.",
             "vehicle_vin": "Ask for their vehicle's VIN (17 characters).",
             "vehicle_year": "Ask for the vehicle's year.",
-            "vehicle_make": "Ask for the vehicle's make (e.g., Toyota, Ford, Honda).",
-            "vehicle_body": "Ask for the vehicle's body type (e.g., Sedan, SUV, Truck, Coupe).",
-            "vehicle_use": "Ask how they use this vehicle. Options: Commuting, Commercial, Farming, or Business.",
-            "blind_spot_warning": "Ask if the vehicle has blind spot warning equipment (Yes/No).",
-            "commute_days": "Ask how many days per week they use this vehicle for commuting.",
-            "commute_miles": "Ask about one-way miles to work/school.",
-            "annual_mileage": "Ask for estimated annual mileage.",
-            "add_another_vehicle": "Ask if they want to add another vehicle to their policy.",
-            "license_type": "Ask about their US license type. Options: Foreign, Personal, or Commercial.",
-            "license_status": "Ask about their license status: Valid or Suspended.",
-            "complete": "Thank them and let them know their information has been collected successfully."
+            "vehicle_make": "Acknowledge the year, then ask for the vehicle's make (e.g., Toyota, Ford, Honda).",
+            "vehicle_body": "Acknowledge the make, then ask for the vehicle's body type (e.g., Sedan, SUV, Truck, Coupe).",
+            "vehicle_use": "Acknowledge the vehicle details, then ask how they use this vehicle. Options: Commuting, Commercial, Farming, or Business.",
+            "blind_spot_warning": "Acknowledge the vehicle use, then ask if the vehicle has blind spot warning equipment (Yes/No).",
+            "commute_days": "Acknowledge their response, then ask how many days per week they use this vehicle for commuting.",
+            "commute_miles": "Acknowledge the days, then ask about one-way miles to work/school.",
+            "annual_mileage": "Acknowledge their commute distance, then ask for their estimated ANNUAL MILEAGE for this vehicle. Do NOT ask about other vehicles or license yet - ONLY ask for annual mileage.",
+            "add_another_vehicle": "Acknowledge the information collected, then ask if they want to add another vehicle to their policy.",
+            "license_type": "Acknowledge the vehicle information is complete, then ask about their US license type. Options: Foreign, Personal, or Commercial.",
+            "license_status": "Acknowledge the license type, then ask about their license status: Valid or Suspended.",
+            "complete": "Thank them warmly and let them know their information has been collected successfully. Keep it brief and positive."
         }
         
         state_instruction = state_prompts.get(current_state, "Continue the conversation naturally.")
@@ -55,7 +58,7 @@ IMPORTANT RULES:
                 if value:
                     context_str += f"- {key}: {value}\n"
         
-        return f"{base_prompt}\n\nCurrent task: {state_instruction}{context_str}"
+        return f"{base_prompt}\n\n=== YOUR CURRENT TASK (DO EXACTLY THIS) ===\n{state_instruction}\n===========================================\n{context_str}"
     
     async def generate_response(
         self,
@@ -106,11 +109,11 @@ IMPORTANT RULES:
                 "blind_spot_warning": "Does this vehicle have blind spot warning? (Yes/No)",
                 "commute_days": "How many days per week do you commute?",
                 "commute_miles": "How many miles is your one-way commute?",
-                "annual_mileage": "What is your estimated annual mileage?",
+                "annual_mileage": "Thank you! Now, what is your estimated annual mileage for this vehicle?",
                 "add_another_vehicle": "Would you like to add another vehicle?",
                 "license_type": "What type of US license do you have? (Foreign, Personal, Commercial)",
                 "license_status": "What is your license status? (Valid/Suspended)",
-                "complete": "Thank you! Your information has been collected successfully."
+                "complete": "Thank you! Your information has been collected successfully. You can now start a new session if needed."
             }
             return fallback_responses.get(current_state, "I'm sorry, could you repeat that?")
     

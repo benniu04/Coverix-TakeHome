@@ -17,8 +17,10 @@ function getStepIndex(state: string): number {
   if (state.includes('zip')) return 0;
   if (state.includes('name')) return 1;
   if (state.includes('email')) return 2;
-  if (state.includes('vehicle') || state.includes('commute') || state.includes('mileage') || state.includes('blind')) return 3;
+  // Check license first before vehicle (to avoid matching "add_another_vehicle")
   if (state.includes('license') || state === 'complete') return 4;
+  // Vehicle-related states including all vehicle info collection
+  if (state.includes('vehicle') || state.includes('commute') || state.includes('mileage') || state.includes('blind') || state.includes('vin') || state.includes('make') || state.includes('body') || state.includes('use')) return 3;
   return 0;
 }
 

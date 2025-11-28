@@ -69,7 +69,17 @@ class ConversationEngine:
         
         elif state == ConversationState.VEHICLE_CHOICE.value:
             lower = user_input.lower()
-            if 'vin' in lower:
+            # Check if user provided a VIN directly (17 alphanumeric characters)
+            vin_match = re.search(r'\b([A-HJ-NPR-Z0-9]{17})\b', user_input.upper())
+            if vin_match:
+                # User provided VIN directly, validate it immediately
+                vin = vin_match.group(1)
+                result = await self.nhtsa_service.decode_vin(vin)
+                if result.get('valid'):
+                    result['vin'] = vin
+                    return True, {'choice': 'vin', 'vin_data': result}, None
+                return False, None, result.get('error', 'Invalid VIN.')
+            elif 'vin' in lower:
                 return True, 'vin', None
             elif any(word in lower for word in ['year', 'make', 'manual', 'type', 'other']):
                 return True, 'manual', None
@@ -204,8 +214,13 @@ class ConversationEngine:
         }
         
         if current_state == ConversationState.VEHICLE_CHOICE.value:
-            if value == 'vin':
+            # If user provided VIN data directly, skip to VEHICLE_USE
+            if isinstance(value, dict) and 'vin_data' in value:
+                return ConversationState.VEHICLE_USE.value
+            # If user said they want to provide VIN, go to VIN state
+            elif value == 'vin':
                 return ConversationState.VEHICLE_VIN.value
+            # Otherwise, go to manual entry (year)
             return ConversationState.VEHICLE_YEAR.value
         
         if current_state == ConversationState.VEHICLE_VIN.value:
@@ -233,22 +248,27 @@ class ConversationEngine:
             return ConversationState.COMMUTE_MILES.value
         
         if current_state == ConversationState.COMMUTE_MILES.value:
+            # After commute vehicle is done, ask if they want to add another
             return ConversationState.ADD_ANOTHER_VEHICLE.value
         
         if current_state == ConversationState.ANNUAL_MILEAGE.value:
+            # After commercial/farming/business vehicle is done, ask if they want to add another
             return ConversationState.ADD_ANOTHER_VEHICLE.value
         
         if current_state == ConversationState.ADD_ANOTHER_VEHICLE.value:
             if value:  # User wants to add another vehicle
                 return ConversationState.VEHICLE_CHOICE.value
+            # User is done adding vehicles, now collect license info
             return ConversationState.LICENSE_TYPE.value
         
         if current_state == ConversationState.LICENSE_TYPE.value:
             if value == 'foreign':
+                # Foreign license, skip status and complete
                 return ConversationState.COMPLETE.value
             return ConversationState.LICENSE_STATUS.value
         
         if current_state == ConversationState.LICENSE_STATUS.value:
+            # All done!
             return ConversationState.COMPLETE.value
         
         return state_transitions.get(current_state, current_state)
@@ -276,6 +296,15 @@ class ConversationEngine:
             vehicle = Vehicle(conversation_id=conversation.id)
             db.add(vehicle)
             db.commit()
+            
+            # If user provided VIN directly, save the VIN data
+            if isinstance(value, dict) and 'vin_data' in value:
+                vin_data = value['vin_data']
+                vehicle.vin = vin_data.get('vin')
+                vehicle.year = int(vin_data.get('year')) if vin_data.get('year') else None
+                vehicle.make = vin_data.get('make')
+                vehicle.body_type = vin_data.get('body_class')
+                db.commit()
         
         elif state == ConversationState.VEHICLE_VIN.value:
             vehicle = self._get_current_vehicle(conversation)

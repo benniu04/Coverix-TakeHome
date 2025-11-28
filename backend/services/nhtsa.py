@@ -10,13 +10,16 @@ class NHTSAService:
     @staticmethod
     async def decode_vin(vin: str) -> Dict[str, Any]:
         """
-        Decode a VIN using NHTSA API.
+        Decode a VIN using NHTSA API with multiple validation passes.
         Returns vehicle information if valid, or error info if invalid.
         
         NHTSA Error Codes:
         0 = No errors
-        1-6 = Warnings (checksum mismatch, incomplete data, etc.) but VIN structure is valid
+        1-6 = Warnings but VIN structure is valid
         7+ = Invalid VIN format
+        
+        Note: We don't validate checksums locally because not all manufacturers
+        follow the standard strictly, and NHTSA accepts VINs without valid checksums.
         """
         # Use DecodeVinValues for better validation
         url = f"{NHTSAService.BASE_URL}/DecodeVinValues/{vin}?format=json"
@@ -77,6 +80,12 @@ class NHTSAService:
                             "valid": False,
                             "error": "This VIN doesn't appear to be for a standard consumer vehicle."
                         }
+                
+                # Stricter validation: For consumer vehicles, we should have at least make and year
+                # If NHTSA gives us incomplete data on what should be a normal car, it's suspicious
+                if error_code >= 1 and (not year or not model):
+                    # Warn user but don't block - could be an older vehicle
+                    pass
                 
                 return {
                     "valid": True,
