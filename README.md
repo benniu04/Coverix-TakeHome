@@ -2,8 +2,6 @@
 
 A conversational chatbot for insurance onboarding that collects user information through a guided flow. Built with FastAPI (Python) and React (TypeScript).
 
-![Chatbot Screenshot](screenshot.png)
-
 ## Features
 
 - 🤖 **AI-Powered Conversations**: Uses OpenAI GPT-3.5 for natural language understanding
