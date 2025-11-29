@@ -40,15 +40,30 @@ function App() {
       </div>
       
       <header className="app-header">
+        <div className="header-shine"></div>
         <div className="header-content">
           <div className="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="logo-icon">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-            </svg>
-            <span className="logo-text">InsureBot</span>
+            <div className="logo-icon-wrapper">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="logo-icon">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            </div>
+            <div className="logo-text-container">
+              <span className="logo-text">InsureMe</span>
+              <span className="logo-tagline">AI-Powered Insurance Assistant</span>
+            </div>
           </div>
           <div className="header-info">
-            <span className="badge">Secure Onboarding</span>
+            <div className="status-indicator">
+              <div className="status-dot"></div>
+              <span className="status-text">Live</span>
+            </div>
+            <span className="badge">
+              <svg viewBox="0 0 24 24" fill="currentColor" className="badge-icon">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+              </svg>
+              Secure & Encrypted
+            </span>
           </div>
         </div>
       </header>
