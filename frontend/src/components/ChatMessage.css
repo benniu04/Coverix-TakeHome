@@ -2,17 +2,17 @@
   display: flex;
   gap: 12px;
   padding: 16px 24px;
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -33,6 +33,17 @@
 .message-container.assistant .message-avatar {
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   color: white;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  animation: avatarPulse 2s ease-in-out infinite;
+}
+
+@keyframes avatarPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6);
+  }
 }
 
 .message-container.user .message-avatar {
@@ -62,6 +73,11 @@
   border-radius: 20px;
   line-height: 1.5;
   white-space: pre-wrap;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.message-bubble:hover {
+  transform: translateY(-1px);
 }
 
 .message-container.assistant .message-bubble {
@@ -74,6 +90,11 @@
   background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
   color: white;
   border-bottom-right-radius: 4px;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+}
+
+.message-container.user .message-bubble:hover {
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
 .message-time {

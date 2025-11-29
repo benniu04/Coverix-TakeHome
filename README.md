@@ -4,7 +4,7 @@ A conversational chatbot for insurance onboarding that collects user information
 
 ## Features
 
-- 🤖 **AI-Powered Conversations**: Uses OpenAI GPT-3.5 for natural language understanding
+- 🤖 **AI-Powered Conversations**: Uses OpenAI GPT-4o-mini for natural language understanding
 - 🚗 **Vehicle Validation**: Validates VINs and vehicle makes against NHTSA API
 - 💾 **Real-time Database Storage**: All conversations are stored in SQLite for review
 - 🎯 **State Machine Flow**: Guided conversation that collects information in order
@@ -33,7 +33,7 @@ The chatbot collects information in this order:
 - **FastAPI** - Modern Python web framework
 - **SQLAlchemy** - ORM for database operations
 - **SQLite** - Lightweight database
-- **OpenAI** - GPT-3.5 for conversation generation
+- **OpenAI** - GPT-4o-mini for conversation generation
 - **httpx** - Async HTTP client for API calls
 
 ### Frontend
@@ -188,8 +188,4 @@ The bot will respond with a calming quote from ZenQuotes.
 - NHTSA API may be slow - wait a moment
 - Ensure VIN is exactly 17 characters
 - Some VINs may not be in the database
-
-## License
-
-MIT License - Feel free to use this for your own projects!
 
